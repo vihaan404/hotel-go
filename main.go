@@ -33,18 +33,17 @@ func main() {
 		log.Fatal(err)
 	}
 	// handler intilization
-	dbStore := db.NewMongoUserStore(client)
+	dbStore := db.NewMongoUserStore(client, dbName)
 	userHandler := api.NewUserHandler(dbStore)
 
 	listenAddr := flag.String("listenAddr", ":5000", "specify the port")
 	flag.Parse()
 	app := fiber.New(config)
-
-	appv1 := app.Group("api/v1")
-	appv1.Delete("/user/:id", userHandler.HandleDeleteUser)
-	appv1.Post("/user", userHandler.HandlePostUser)
-	appv1.Get("/user", userHandler.HandleGetUsers)
-
-	appv1.Get("/user/:id", userHandler.HandleGetUser)
+	apiv1 := app.Group("api/v1")
+	apiv1.Put("user/:id", userHandler.HandlerUpdateUser)
+	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
+	apiv1.Post("/user", userHandler.HandlePostUser)
+	apiv1.Get("/user", userHandler.HandleGetUsers)
+	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 	app.Listen(*listenAddr)
 }

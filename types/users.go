@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,11 +16,35 @@ const (
 	minPasswordLen  = 7
 )
 
+type UpdatedUserParams struct {
+	FirstName string ` json:"firstname"`
+	LastName  string `json:"lastName"`
+}
+
+func (p *UpdatedUserParams) MappingBson() bson.M {
+	bsonMap := bson.M{}
+	if len(p.FirstName) > 0 {
+		bsonMap["firstName"] = p.FirstName
+	}
+	if len(p.FirstName) > 0 {
+		bsonMap["lastName"] = p.LastName
+	}
+	return bsonMap
+}
+
 type UserParams struct {
 	FirstName string ` json:"firstname"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
+}
+
+type User struct {
+	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	FirstName         string             `bson:"firstName" json:"firstName"`
+	LastName          string             `bson:"lastName" json:"lastName"`
+	Email             string             `bson:"email" json:"email"`
+	EncryptedPassword string             `bson:"encryptedPassword" json:"-"`
 }
 
 func NewUserParams(params UserParams) (*User, error) {
@@ -61,12 +86,4 @@ func isValidEmail(email string) bool {
 
 	// Check if the email matches the pattern
 	return regex.MatchString(email)
-}
-
-type User struct {
-	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	FirstName         string             `bson:"firstName" json:"firstName"`
-	LastName          string             `bson:"lastName" json:"lastName"`
-	Email             string             `bson:"email" json:"email"`
-	EncryptedPassword string             `bson:"encryptedPassword" json:"-"`
 }

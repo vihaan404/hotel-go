@@ -16,7 +16,12 @@ const (
 	userColl = "users"
 )
 
+type Dropper interface {
+	Drop(ctx context.Context) error
+}
 type UserStore interface {
+	Dropper
+	UpdateUser(ctx context.Context, id string, params types.UpdatedUserParams) error
 	GetUserById(context.Context, string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 	InsertUser(context.Context, *types.User) (*types.User, error)
@@ -28,7 +33,7 @@ type MongoUserStore struct {
 	coll   *mongo.Collection
 }
 
-func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
+func NewMongoUserStore(client *mongo.Client, dbName string) *MongoUserStore {
 	return &MongoUserStore{
 		client: client,
 		coll:   client.Database(dbName).Collection(userColl),
@@ -77,8 +82,33 @@ func (s *MongoUserStore) DeleteUser(ctx context.Context, id string) error {
 		return err
 	}
 
-	res, err := s.coll.DeleteOne(ctx, bson.M{"_id": oid})
-	fmt.Print(res)
+	_, err = s.coll.DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MongoUserStore) UpdateUser(ctx context.Context, id string, params types.UpdatedUserParams) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	values := params.MappingBson()
+
+	update := bson.D{{"$set", values}}
+
+	_, err = s.coll.UpdateByID(ctx, oid, update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MongoUserStore) Drop(ctx context.Context) error {
+	fmt.Println("---------Dropping-----------")
+	err := s.coll.Drop(ctx)
 	if err != nil {
 		return err
 	}

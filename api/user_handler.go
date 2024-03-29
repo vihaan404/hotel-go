@@ -73,3 +73,18 @@ func (h *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
 
 	return c.JSON(map[string]string{"deleted": userId})
 }
+
+func (h *UserHandler) HandlerUpdateUser(c *fiber.Ctx) error {
+	var params types.UpdatedUserParams
+	userId := c.Params("id")
+	err := c.BodyParser(&params)
+	if err != nil {
+		return err
+	}
+	err = h.userStore.UpdateUser(c.Context(), userId, params)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(map[string]string{"updated": userId})
+}
